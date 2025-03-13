@@ -2,15 +2,15 @@ package com.week5.week5.services;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,13 +20,13 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 @Service
 public class ImageService {
-
     
     @Autowired
     private S3Client s3Client;
@@ -35,41 +35,75 @@ public class ImageService {
     private S3Presigner s3Presigner;
 
     private String BUCKET_NAME = "week5labbucketimageuploader";
+    
+    // Map to store pagination state
+    private Map<Integer, String> pageTokenMap = new HashMap<>();
 
-    public Page<String> getImages(Pageable pageable, String continuationToken) {
-        // First, get the total count of images to properly calculate pagination
-        long totalImageCount = countTotalImages();
+    public Map<String, Object> getImages(int page, int size) {
+        Map<String, Object> result = new HashMap<>();
+        List<String> imageUrls = new ArrayList<>();
         
-        // Then fetch the specific page
-        ListObjectsV2Request listObjectsV2Request = ListObjectsV2Request.builder()
+        // Get continuation token for the requested page
+        String continuationToken = page > 0 ? pageTokenMap.get(page - 1) : null;
+        
+        ListObjectsV2Request.Builder requestBuilder = ListObjectsV2Request.builder()
                 .bucket(BUCKET_NAME)
-                .maxKeys(pageable.getPageSize())
-                .continuationToken(continuationToken)
-                .build();
-
-        ListObjectsV2Response response = s3Client.listObjectsV2(listObjectsV2Request);
-
-        List<String> imageList = response.contents().stream()
+                .maxKeys(size);
+                
+        if (continuationToken != null && !continuationToken.isEmpty()) {
+            requestBuilder.continuationToken(continuationToken);
+        }
+        
+        ListObjectsV2Response response = s3Client.listObjectsV2(requestBuilder.build());
+        
+        // Process images and generate presigned URLs
+        List<S3Object> objects = response.contents();
+        imageUrls = objects.stream()
                 .filter(s3Object -> isImage(s3Object.key()))
                 .map(obj -> generatePresignedUrl(obj.key()))
                 .collect(Collectors.toList());
-       
-        // Use the total count instead of keyCount for accurate pagination
-        return new PageImpl<>(imageList, pageable, totalImageCount);
+        
+        // Store the next continuation token for subsequent pages
+        if (response.isTruncated()) {
+            pageTokenMap.put(page, response.nextContinuationToken());
+            result.put("hasNextPage", true);
+        } else {
+            result.put("hasNextPage", false);
+        }
+        
+        // Calculate total count for proper pagination display
+        long totalCount = countTotalImages();
+        int totalPages = (int) Math.ceil((double) totalCount / size);
+        
+        result.put("images", imageUrls);
+        result.put("totalPages", Math.max(1, totalPages));
+        result.put("currentPage", page);
+        
+        return result;
     }
 
     private long countTotalImages() {
-        // This method counts all images in the bucket to calculate pagination
-        ListObjectsV2Request countRequest = ListObjectsV2Request.builder()
-                .bucket(BUCKET_NAME)
-                .build();
+        long count = 0;
+        String continuationToken = null;
         
-        ListObjectsV2Response response = s3Client.listObjectsV2(countRequest);
+        do {
+            ListObjectsV2Request.Builder requestBuilder = ListObjectsV2Request.builder()
+                    .bucket(BUCKET_NAME);
+                    
+            if (continuationToken != null) {
+                requestBuilder.continuationToken(continuationToken);
+            }
+            
+            ListObjectsV2Response response = s3Client.listObjectsV2(requestBuilder.build());
+            
+            count += response.contents().stream()
+                    .filter(s3Object -> isImage(s3Object.key()))
+                    .count();
+                    
+            continuationToken = response.isTruncated() ? response.nextContinuationToken() : null;
+        } while (continuationToken != null);
         
-        // Count only image files
-        return response.contents().stream()
-                .filter(s3Object -> isImage(s3Object.key()))
-                .count();
+        return count;
     }
 
     public String generatePresignedUrl(String objectKey) {
@@ -90,7 +124,6 @@ public class ImageService {
                key.toLowerCase().endsWith(".jpeg") || 
                key.toLowerCase().endsWith(".png");
     }
-
 
     public String uploadMultipleFiles(MultipartFile[] files) throws IOException {
         // Filter out empty files

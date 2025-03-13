@@ -1,10 +1,6 @@
 package com.week5.week5.controllers;
 
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,39 +9,31 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.week5.week5.services.ImageService;
 
+import java.util.Map;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-
 
 @Controller
 @RequestMapping("/")
 public class HomeController {
 
-
     @Autowired
     private ImageService imageService;
 
-
     @GetMapping("/")
     public String index(@RequestParam(value = "page", defaultValue = "0") int page, 
-                        @RequestParam(value = "size", defaultValue = "5") int size, 
-                        @RequestParam(value = "continuationToken", required = false) String continuationToken,
-                        Model model) {
-
-        Pageable pageable = PageRequest.of(page, size);
-
-        Page<String> imagesPage = imageService.getImages(pageable, continuationToken);
+                       @RequestParam(value = "size", defaultValue = "5") int size,
+                       Model model) {
         
-        // Pass the content directly to avoid issues with Thymeleaf iteration
-        model.addAttribute("images", imagesPage.getContent());
+        Map<String, Object> result = imageService.getImages(page, size);
         
-        // Make sure totalPages is at least 1 to handle empty buckets
-        int totalPages = Math.max(1, imagesPage.getTotalPages());
-        model.addAttribute("totalPages", totalPages);
-        model.addAttribute("currentPage", page);
+        model.addAttribute("images", result.get("images"));
+        model.addAttribute("totalPages", result.get("totalPages"));
+        model.addAttribute("currentPage", result.get("currentPage"));
+        model.addAttribute("hasNextPage", result.get("hasNextPage"));
         model.addAttribute("pageSize", size);
-        model.addAttribute("continuationToken", continuationToken);
-
+        
         return "index";
     }
 
@@ -53,7 +41,6 @@ public class HomeController {
     public String addimage() {
         return "addimage";
     }
-
 
     @PostMapping("/upload")
     public String uploadFiles(@RequestParam("images") MultipartFile[] files, RedirectAttributes redirectAttributes) {
@@ -81,5 +68,4 @@ public class HomeController {
         
         return "redirect:/";
     }
-    
 }
