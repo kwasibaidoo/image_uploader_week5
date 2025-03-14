@@ -53,4 +53,4 @@ jobs:
         
     - name: Trigger ECS Deployment
       run: |
-        aws ecs update-service --cluster WebApp-Cluster --service WebApp-Service --force-new-deployment
+        aws ecs update-service --cluster webapp-Cluster --service webapp-Service --force-new-deployment
