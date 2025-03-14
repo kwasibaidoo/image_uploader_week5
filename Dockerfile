@@ -3,9 +3,12 @@ WORKDIR /workspace/app
 
 # Copy maven executable and config
 COPY mvnw .
-COPY .mvn .mvn
-COPY pom.xml .
+COPY .mvn .mvn 
+COPY pom.xml . 
 COPY src src
+
+# Make Maven wrapper executable
+RUN chmod +x ./mvnw
 
 # Build the application
 RUN ./mvnw package -DskipTests
