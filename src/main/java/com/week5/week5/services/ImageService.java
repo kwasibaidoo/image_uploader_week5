@@ -34,7 +34,7 @@ public class ImageService {
     @Autowired
     private S3Presigner s3Presigner;
 
-    private String BUCKET_NAME = "webapp-images-803605875729";
+    private String BUCKET_NAME = "weekfiveproject-images-803605875729";
     
     // Map to store pagination state
     private Map<Integer, String> pageTokenMap = new HashMap<>();
