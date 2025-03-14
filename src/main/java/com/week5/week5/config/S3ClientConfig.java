@@ -12,7 +12,7 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 @Configuration
 public class S3ClientConfig {
 
-    @Value("${spring.cloud.aws.region.static:us-west-2}")
+    @Value("${spring.cloud.aws.region.static:us-east-1}")
     private String awsRegion;
     
     @Bean
