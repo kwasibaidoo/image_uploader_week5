@@ -55,4 +55,4 @@ jobs:
         
     - name: Trigger ECS Deployment
       run: |
-        aws ecs update-service --cluster ${{ env.APP_ENVIRONMENT }}-Cluster --service ${{ env.APP_ENVIRONMENT }}-Service --force-new-deployment
+        # aws ecs update-service --cluster ${{ env.APP_ENVIRONMENT }}-Cluster --service ${{ env.APP_ENVIRONMENT }}-Service --force-new-deployment
