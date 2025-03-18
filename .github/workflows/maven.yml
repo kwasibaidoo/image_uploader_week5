@@ -142,23 +142,16 @@ jobs:
 
     - name: Trigger CodeDeploy deployment
       run: |
-        # Create a file with the revision JSON - note the quotes around the jq output
-        cat > revision.json << EOF
-        {
-          "revisionType": "AppSpecContent",
-          "appSpecContent": {
-            "content": "$(cat appspec.json | jq -c -r @json)"
-          }
-        }
-        EOF
+        # Convert appspec.json content to a properly escaped JSON string
+        APPSPEC_CONTENT=$(cat appspec.json | jq -c -r @json)
         
-        # Create a new CodeDeploy deployment using the file
+        # Create a deployment with the appspec content as a string
         DEPLOYMENT_ID=$(aws deploy create-deployment \
           --application-name ${{ env.CODEDEPLOY_APPLICATION }} \
           --deployment-group-name ${{ env.CODEDEPLOY_DEPLOYMENT_GROUP }} \
           --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
           --description "Deployment triggered by GitHub Actions" \
-          --revision file://revision.json \
+          --revision "{\"revisionType\":\"AppSpecContent\",\"appSpecContent\":{\"content\":$APPSPEC_CONTENT}}" \
           --region ${{ env.AWS_REGION }} \
           --query 'deploymentId' --output text)
         echo "Deployment ID: $DEPLOYMENT_ID"
