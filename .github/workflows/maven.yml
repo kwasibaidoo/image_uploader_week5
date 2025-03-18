@@ -142,24 +142,26 @@ jobs:
 
     - name: Trigger CodeDeploy deployment
       run: |
-        # Read the appspec.json file and format it as a JSON object using jq
-        APPSPEC_CONTENT=$(cat appspec.json | jq -c .)
-    
-        # Create a new CodeDeploy deployment
+        # Create a file with the revision JSON
+        cat > revision.json << EOF
+        {
+          "revisionType": "AppSpecContent",
+          "appSpecContent": {
+            "content": $(cat appspec.json | jq -c .)
+          }
+        }
+        EOF
+        
+        # Create a new CodeDeploy deployment using the file
         DEPLOYMENT_ID=$(aws deploy create-deployment \
           --application-name ${{ env.CODEDEPLOY_APPLICATION }} \
           --deployment-group-name ${{ env.CODEDEPLOY_DEPLOYMENT_GROUP }} \
           --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
           --description "Deployment triggered by GitHub Actions" \
-          --revision '{
-            "revisionType": "AppSpecContent",
-            "appSpecContent": {
-              "content": '"\"$APPSPEC_CONTENT\""'
-            }
-          }' \
+          --revision file://revision.json \
           --region ${{ env.AWS_REGION }} \
           --query 'deploymentId' --output text)
         echo "Deployment ID: $DEPLOYMENT_ID"
-    
+        
         # Wait for the deployment to complete (optional, for monitoring)
         aws deploy wait deployment-successful --deployment-id $DEPLOYMENT_ID --region ${{ env.AWS_REGION }}
