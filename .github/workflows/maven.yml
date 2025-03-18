@@ -69,8 +69,8 @@ jobs:
           "memory": "512",
           "networkMode": "awsvpc",
           "requiresCompatibilities": ["FARGATE"],
-          "executionRoleArn": "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/Week5LabNew-ECSTaskExecutionRole-sz1Ef2pyV3xS",
-          "taskRoleArn": "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/Week5LabNew-ECSTaskExecutionRole-sz1Ef2pyV3xS",
+          "taskRoleArn": "arn:aws:iam::803605875729:role/Week5LabNew-ECSTaskExecutionRole-sz1Ef2pyV3xS",
+          "executionRoleArn": "arn:aws:iam::803605875729:role/Week5LabNew-ECSTaskExecutionRole-sz1Ef2pyV3xS",
           "containerDefinitions": [
             {
               "name": "${{ env.APP_ENVIRONMENT }}-container",
