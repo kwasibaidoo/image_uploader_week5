@@ -12,6 +12,9 @@ body {
     flex-direction: column;
     height: 100%; 
 }
+.content {
+    padding: 2rem;
+}
 .nav {
     display: flex;
     flex-direction: row;
@@ -90,10 +93,27 @@ button {
     gap: 1rem;
     justify-content: start;
     justify-items: center;
+    align-items: center;
 }
 .image-item {
     border-radius: 0.4rem;
     width: 30%;
+    border: 2px solid black;
+    height: 20rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    object-fit: cover;
+    object-position: center;
+    flex-direction: column;
+    position: relative;
+}
+.delete {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    background-color: red;
+    color: white;
 }
 a {
     text-decoration: none;

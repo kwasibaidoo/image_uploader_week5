@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
@@ -35,6 +36,8 @@ public class ImageService {
     private S3Presigner s3Presigner;
 
     private String BUCKET_NAME = "weekfiveproject-images-803605875729";
+    // private String BUCKET_NAME = "week5labbucketimageuploader";
+
     
     // Map to store pagination state
     private Map<Integer, String> pageTokenMap = new HashMap<>();
@@ -157,5 +160,20 @@ public class ImageService {
         }
     
         return "success";
+    }
+
+
+    public String deleteImage(String id) {
+        try {
+            DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                                                                            .bucket(BUCKET_NAME)
+                                                                            .key(id)
+                                                                            .build();
+                                            
+            s3Client.deleteObject(deleteObjectRequest);
+            return "success";
+        } catch (Exception e) {
+            return "error";
+        }
     }
 }

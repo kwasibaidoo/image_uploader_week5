@@ -5,6 +5,9 @@
 </head>
 <body>
     <section layout:fragment="content">
+        <div th:if="${message}" class="alert alert-danger" role="alert">
+            <p th:text="${message}"></p>
+        </div>
         <div class="sub-heading-container">
             <h3 class="image-heading">Your Images</h3>
             <button class="button" onclick="window.location.reload();">
@@ -15,6 +18,10 @@
             <!-- Using 'images' directly since we're passing content from the controller -->
             <div th:each="image : ${images}" class="image-item">
                 <img class="image" th:src="${image}" alt="Image">
+                <form action="/delete" method="post">
+                    <input type="hidden" name="id" th:value="${image}">
+                    <button class="delete">Delete</button>
+                </form>
             </div>
             <!-- Show a message if no images are found -->
             <div th:if="${#lists.isEmpty(images)}" class="no-images">

@@ -68,4 +68,19 @@ public class HomeController {
         
         return "redirect:/";
     }
+
+    @PostMapping("/delete")
+    public String deleteFile(@RequestParam("id") String url, RedirectAttributes redirectAttributes) {
+        String objectKey = url.substring(url.indexOf("amazonaws.com/") + 14, url.indexOf("?"));
+        System.out.println(objectKey);
+        // System.out.println(objectKey);
+        String result = imageService.deleteImage(objectKey);
+        if ("success".equals(result)) {
+            redirectAttributes.addFlashAttribute("message", "Successfully deleted");
+            return "redirect:/";
+        } else {
+            redirectAttributes.addFlashAttribute("message", "There was a problem while deleting the file");
+            return "redirect:/";
+        }
+    }
 }
