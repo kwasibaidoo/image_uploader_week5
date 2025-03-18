@@ -142,9 +142,9 @@ jobs:
 
     - name: Trigger CodeDeploy deployment
       run: |
-        # Use jq to read the appspec.json file and format it as a JSON object
+        # Read the appspec.json file and format it as a JSON object using jq
         APPSPEC_CONTENT=$(cat appspec.json | jq -c .)
-
+    
         # Create a new CodeDeploy deployment
         DEPLOYMENT_ID=$(aws deploy create-deployment \
           --application-name ${{ env.CODEDEPLOY_APPLICATION }} \
@@ -160,6 +160,6 @@ jobs:
           --region ${{ env.AWS_REGION }} \
           --query 'deploymentId' --output text)
         echo "Deployment ID: $DEPLOYMENT_ID"
-
+    
         # Wait for the deployment to complete (optional, for monitoring)
         aws deploy wait deployment-successful --deployment-id $DEPLOYMENT_ID --region ${{ env.AWS_REGION }}
