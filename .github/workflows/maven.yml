@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CI/CD Pipeline for Blue-Green Deployment
 
 on:
   push:
@@ -69,8 +69,8 @@ jobs:
           "memory": "512",
           "networkMode": "awsvpc",
           "requiresCompatibilities": ["FARGATE"],
-          "taskRoleArn": "arn:aws:iam::803605875729:role/Week5LabNew-ECSTaskExecutionRole-sz1Ef2pyV3xS",
-          "executionRoleArn": "arn:aws:iam::803605875729:role/Week5LabNew-ECSTaskExecutionRole-sz1Ef2pyV3xS",
+          "executionRoleArn": "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ env.APP_ENVIRONMENT }}-TaskExecutionRole",
+          "taskRoleArn": "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ env.APP_ENVIRONMENT }}-TaskExecutionRole",
           "containerDefinitions": [
             {
               "name": "${{ env.APP_ENVIRONMENT }}-container",
@@ -137,17 +137,29 @@ jobs:
         }
         EOF
 
+    - name: Install jq
+      run: sudo apt-get install -y jq
+
     - name: Trigger CodeDeploy deployment
       run: |
+        # Use jq to read the appspec.json file and format it as a JSON object
+        APPSPEC_CONTENT=$(cat appspec.json | jq -c .)
+
         # Create a new CodeDeploy deployment
         DEPLOYMENT_ID=$(aws deploy create-deployment \
           --application-name ${{ env.CODEDEPLOY_APPLICATION }} \
           --deployment-group-name ${{ env.CODEDEPLOY_DEPLOYMENT_GROUP }} \
           --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
           --description "Deployment triggered by GitHub Actions" \
-          --revision revisionType=AppSpecContent,appSpecContent='$(cat appspec.json)' \
+          --revision '{
+            "revisionType": "AppSpecContent",
+            "appSpecContent": {
+              "content": '"\"$APPSPEC_CONTENT\""'
+            }
+          }' \
           --region ${{ env.AWS_REGION }} \
           --query 'deploymentId' --output text)
         echo "Deployment ID: $DEPLOYMENT_ID"
+
         # Wait for the deployment to complete (optional, for monitoring)
         aws deploy wait deployment-successful --deployment-id $DEPLOYMENT_ID --region ${{ env.AWS_REGION }}
