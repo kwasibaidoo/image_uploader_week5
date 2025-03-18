@@ -1,4 +1,3 @@
-# .github/workflows/ci-cd.yml
 name: CI/CD Pipeline
 
 on:
@@ -6,6 +5,9 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+
+env:
+  APP_ENVIRONMENT: weekfiveproject
 
 jobs:
   build-and-push:
@@ -49,8 +51,8 @@ jobs:
         docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-        echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+        echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_ENV
         
     - name: Trigger ECS Deployment
       run: |
-        aws ecs update-service --cluster webapp-Cluster --service webapp-Service --force-new-deployment
+        # aws ecs update-service --cluster ${{ env.APP_ENVIRONMENT }}-Cluster --service ${{ env.APP_ENVIRONMENT }}-Service --force-new-deployment
