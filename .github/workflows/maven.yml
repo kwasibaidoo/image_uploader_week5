@@ -143,7 +143,10 @@ jobs:
     - name: Trigger CodeDeploy deployment
       run: |
         # Read appspec.json and escape the content properly
-        APPSPEC_CONTENT=$(cat appspec.json)
+        APPSPEC_CONTENT=$(cat appspec.json | jq -c -r @json)
+        
+        # Escape any inner quotes so that it's valid JSON for AWS
+        ESCAPED_APPSPEC_CONTENT=$(echo $APPSPEC_CONTENT | sed 's/"/\\"/g')
         
         # Create a deployment with the appspec content as a string
         DEPLOYMENT_ID=$(aws deploy create-deployment \
@@ -151,11 +154,11 @@ jobs:
           --deployment-group-name ${{ env.CODEDEPLOY_DEPLOYMENT_GROUP }} \
           --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
           --description "Deployment triggered by GitHub Actions" \
-          --revision "{\"revisionType\":\"AppSpecContent\",\"appSpecContent\":{\"content\":\"$APPSPEC_CONTENT\"}}" \
+          --revision "{\"revisionType\":\"AppSpecContent\",\"appSpecContent\":{\"content\":\"$ESCAPED_APPSPEC_CONTENT\"}}" \
           --region ${{ env.AWS_REGION }} \
           --query 'deploymentId' --output text)
+        
         echo "Deployment ID: $DEPLOYMENT_ID"
-
         
         # Wait for the deployment to complete
         aws deploy wait deployment-successful --deployment-id $DEPLOYMENT_ID --region ${{ env.AWS_REGION }}
