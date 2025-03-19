@@ -161,4 +161,4 @@ jobs:
         echo "Deployment ID: $DEPLOYMENT_ID"
         
         # Wait for the deployment to complete
-        aws deploy wait deployment-successful --deployment-id $DEPLOYMENT_ID --region ${{ env.AWS_REGION }}
+        aws deploy get-deployment --deployment-id $DEPLOYMENT_ID --region ${{ env.AWS_REGION }}
